@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensagens do Banco de Dados</title>
+    <style>
+        body {
+            background-color: #1c1c1c;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .message-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .message {
+            background-color: #333;
+            border: 2px solid #f9ca24;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            position: relative;
+        }
+
+        .message-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .message-content {
+            color: #ecf0f1;
+        }
+
+        .message-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .message-sender {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .message-date {
+            font-size: 0.8em;
+            color: #bdc3c7;
+        }
+
+        .message-text {
+            margin-top: 5px;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .message:hover .delete-button {
+            display: block;
+        }
+
+        .hide-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .message:hover .hide-button {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const messageContainer = document.querySelector('.message-container');
+        const currentUser = "flavia"; // Seu nome de usuário
+        const token = "QNhuEjQ6tUb2CmQyN2B5ipfhC61gLfXe"; // Seu token de autenticação
+
+        function fetchMessages() {
+            axios({
+                method: "GET",
+                url: "https://api.baserow.io/api/database/rows/table/241904/?user_field_names=true",
+                headers: {
+                    Authorization: "Token " + token
+                }
+            })
+                .then(response => {
+                    const messages = response.data.results;
+                    renderMessages(messages);
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar mensagens:', error);
+                });
+        }
+
+        function renderMessages(messages) {
+            messageContainer.innerHTML = '';
+            messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                const isCurrentUser = message.usuario === currentUser;
+                messageElement.innerHTML = `
+              <img class="message-img" src="https://miro.medium.com/v2/resize:fit:1400/1*g09N-jl7JtVjVZGcd-vL2g.jpeg" alt="Imagem do Remetente">
+              <div>
+                <div class="message-top">
+                  <span class="message-sender">${message.usuario}</span>
+                  <span class="message-date">${message.Data}</span>
+                  ${isCurrentUser ? '<span class="delete-button" onclick="deleteMessage()">🗑️</span>' : '<span class="hide-button" onclick="hideMessage()">❌</span>'}
+                </div>
+                <div class="message-text">
+                  <p>${message.Mensagens}</p>
+                </div>
+              </div>
+            `;
+                messageContainer.appendChild(messageElement);
+            });
+        }
+
+        function deleteMessage() {
+            // Coloque aqui a lógica para excluir a mensagem
+            console.log('Mensagem excluída!');
+        }
+
+        function hideMessage() {
+            // Coloque aqui a lógica para ocultar a mensagem
+            console.log('Mensagem ocultada!');
+        }
+
+        function updateMessages() {
+            setInterval(() => {
+                fetchMessages();
+            }, 5000); // Atualiza a cada 5 segundos
+        }
+
+        fetchMessages();
+        updateMessages();
+    </script>
+</body>
+</html>
