@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,45 +6,58 @@
     <title>Mensagens do Banco de Dados</title>
     <style>
         body {
-            background-color: #1c1c1c;
-            color: white;
+            background-color: #121212;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
         }
 
         .message-container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            border-radius: 10px;
+            overflow-y: auto; /* Alterado de 'hidden' para 'auto' para permitir a rolagem dinâmica */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #1f1f1f;
+            padding-bottom: 60px; /* Adicionado um espaço no final para acomodar o botão de rolagem dinâmica */
         }
 
         .message {
-            background-color: #333;
-            border: 2px solid #f9ca24;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
             display: flex;
-            position: relative;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            transition: background-color 0.3s;
+        }
+
+        .message:last-child {
+            border-bottom: none;
+        }
+
+        .message:hover {
+            background-color: #333;
         }
 
         .message-img {
-            width: 100px;
-            height: 100px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             margin-right: 15px;
-            object-fit: cover;
         }
 
         .message-content {
-            color: #ecf0f1;
+            flex: 1;
         }
 
         .message-top {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             margin-bottom: 5px;
         }
 
@@ -55,40 +68,102 @@
 
         .message-date {
             font-size: 0.8em;
-            color: #bdc3c7;
+            color: #bbb;
         }
 
         .message-text {
+            color: #ccc;
             margin-top: 5px;
         }
 
-        .delete-button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
+        .more-options {
+            position: relative;
             cursor: pointer;
-            display: none;
         }
 
-        .message:hover .delete-button {
+        .more-options .options-menu {
+            position: absolute;
+            top: -5px;
+            right: 0; /* Posicionado à direita */
+            background-color: #333;
+            border-radius: 5px;
+            padding: 10px; /* Aumentei o espaçamento interno */
+            display: none;
+            z-index: 1; /* Para garantir que o menu fique acima das outras mensagens */
+        }
+
+        .more-options:hover .options-menu {
             display: block;
         }
 
-        .hide-button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
+        .options-menu-item {
+            color: #fff;
+            padding: 5px;
             cursor: pointer;
-            display: none;
+            transition: background-color 0.3s;
+            margin-bottom: 5px; /* Adicionei espaço entre os itens do menu */
         }
 
-        .message:hover .hide-button {
-            display: block;
+        .options-menu-item:hover {
+            background-color: #555;
+        }
+
+        /* Adicionando estilo para a borda azul neon na última mensagem */
+        .last-message {
+            border-right: 5px solid #00FFFF; /* Altere aqui a cor do neon conforme desejado */
+        }
+
+        /* Adicionando estilo para o botão de rolagem dinâmica */
+        .scroll-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .scroll-button:hover {
+            background-color: #555;
+        }
+
+        /* Estilos adicionados para emojis de reação */
+        .reaction-container {
+            display: inline-flex; /* Alterado para inline-flex para permitir que o fundo se ajuste ao conteúdo */
+            align-items: center;
+            margin-top: 5px;
+            background-color: rgba(0, 0, 0, 0.5); /* Fundo mais escuro */
+            padding: 5px; /* Espaçamento interno */
+            border-radius: 20px; /* Bordas circulares */
+        }
+
+        .reaction {
+            margin-right: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .reaction:hover {
+            transform: scale(1.2);
+        }
+
+        .reaction-count {
+            margin-right: 5px;
+            color: #bbb;
         }
     </style>
 </head>
 <body>
     <div class="message-container"></div>
+
+    <!-- Botão de rolagem dinâmica -->
+    <button class="scroll-button" onclick="scrollToBottom()">⬇️</button>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
@@ -115,25 +190,46 @@
 
         function renderMessages(messages) {
             messageContainer.innerHTML = '';
-            messages.forEach(message => {
+            messages.forEach((message, index) => {
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message');
                 const isCurrentUser = message.usuario === currentUser;
                 messageElement.innerHTML = `
-              <img class="message-img" src="https://miro.medium.com/v2/resize:fit:1400/1*g09N-jl7JtVjVZGcd-vL2g.jpeg" alt="Imagem do Remetente">
-              <div>
-                <div class="message-top">
-                  <span class="message-sender">${message.usuario}</span>
-                  <span class="message-date">${message.Data}</span>
-                  ${isCurrentUser ? '<span class="delete-button" onclick="deleteMessage()">🗑️</span>' : '<span class="hide-button" onclick="hideMessage()">❌</span>'}
-                </div>
-                <div class="message-text">
-                  <p>${message.Mensagens}</p>
-                </div>
-              </div>
-            `;
+                    <img class="message-img" src="https://miro.medium.com/v2/resize:fit:1400/1*g09N-jl7JtVjVZGcd-vL2g.jpeg" alt="Imagem do Remetente">
+                    <div class="message-content">
+                        <div class="message-top">
+                            <span class="message-sender">${message.usuario}</span>
+                            <span class="message-date">${message.Data}</span>
+                            <div class="more-options">
+                                <span>...</span>
+                                <div class="options-menu">
+                                    <div class="options-menu-item" onclick="editMessage()">Editar mensagem</div>
+                                    <div class="options-menu-item" onclick="deleteMessage()">Apagar mensagem</div>
+                                    <div class="options-menu-item" onclick="hideMessage()">Ocultar mensagem</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-text">
+                            <p>${message.Mensagens}</p>
+                        </div>
+                        <!-- Contador de reações -->
+                        <div class="reaction-container">
+                            <span class="reaction-count">0</span>
+                            <span class="reaction" onclick="reactToMessage(this, 'like')">👍</span>
+                            <span class="reaction" onclick="reactToMessage(this, 'love')">❤️</span>
+                            <span class="reaction" onclick="reactToMessage(this, 'haha')">😂</span>
+                            <span class="reaction" onclick="reactToMessage(this, 'wow')">😮</span>
+                        </div>
+                    </div>
+                `;
                 messageContainer.appendChild(messageElement);
+                // Adicionar borda azul neon à última mensagem
+                if (index === messages.length - 1) {
+                    messageElement.classList.add('last-message');
+                }
             });
+            // Rolagem automática para o final
+            scrollToBottom();
         }
 
         function deleteMessage() {
@@ -146,10 +242,26 @@
             console.log('Mensagem ocultada!');
         }
 
+        function editMessage() {
+            // Coloque aqui a lógica para editar a mensagem
+            console.log('Editar mensagem');
+        }
+
         function updateMessages() {
             setInterval(() => {
                 fetchMessages();
             }, 5000); // Atualiza a cada 5 segundos
+        }
+
+        function scrollToBottom() {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        function reactToMessage(reactionElement, reactionType) {
+            const reactionCountElement = reactionElement.parentElement.querySelector('.reaction-count');
+            let currentCount = parseInt(reactionCountElement.textContent);
+            reactionCountElement.textContent = currentCount + 1;
+            // Aqui você pode adicionar a lógica para enviar a reação para o backend, se necessário
         }
 
         fetchMessages();
